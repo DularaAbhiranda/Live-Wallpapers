@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Matrix Wallpaper - Hello ABHIRANDA</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        #textCanvas {
+            z-index: 3;
+        }
+        #frontMatrix {
+            z-index: 2;
+        }
+        #midMatrix {
+            z-index: 1;
+        }
+        #backMatrix {
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="backMatrix"></canvas>
+    <canvas id="midMatrix"></canvas>
+    <canvas id="frontMatrix"></canvas>
+    <canvas id="textCanvas"></canvas>
+
+    <script>
+        // Canvas Setup
+        const layers = [
+            {
+                canvas: document.getElementById('backMatrix'),
+                speed: 0.15,
+                fontSize: 12,
+                opacity: 0.2,
+                fadeSpeed: 0.03
+            },
+            {
+                canvas: document.getElementById('midMatrix'),
+                speed: 0.25,
+                fontSize: 16,
+                opacity: 0.4,
+                fadeSpeed: 0.04
+            },
+            {
+                canvas: document.getElementById('frontMatrix'),
+                speed: 0.35,
+                fontSize: 20,
+                opacity: 0.6,
+                fadeSpeed: 0.05
+            }
+        ];
+
+        layers.forEach(layer => {
+            layer.ctx = layer.canvas.getContext('2d');
+            layer.columns = Math.floor(window.innerWidth / layer.fontSize);
+            layer.drops = new Array(layer.columns).fill(1);
+            // Add random initial positions for smoother start
+            layer.drops = layer.drops.map(() => Math.random() * -100);
+        });
+
+        const textCanvas = document.getElementById('textCanvas');
+        const textCtx = textCanvas.getContext('2d');
+
+        // Set canvas size to window size
+        function resizeCanvas() {
+            layers.forEach(layer => {
+                layer.canvas.width = window.innerWidth;
+                layer.canvas.height = window.innerHeight;
+                layer.columns = Math.floor(window.innerWidth / layer.fontSize);
+                if (layer.drops.length !== layer.columns) {
+                    layer.drops = new Array(layer.columns).fill(1).map(() => Math.random() * -100);
+                }
+            });
+            textCanvas.width = window.innerWidth;
+            textCanvas.height = window.innerHeight;
+        }
+        
+        // Initial resize
+        resizeCanvas();
+        
+        // Handle window resize
+        window.addEventListener('resize', resizeCanvas);
+
+        // Characters to use in the Matrix rain (more sparse selection for cleaner look)
+        const matrix = "અભિરંડા123456789";
+
+        // Matrix rain animation for each layer
+        function drawMatrix(layer) {
+            // Slower fade for smoother trails
+            layer.ctx.fillStyle = `rgba(0, 0, 0, ${layer.fadeSpeed})`;
+            layer.ctx.fillRect(0, 0, layer.canvas.width, layer.canvas.height);
+            
+            // Use a gradient for characters
+            const gradient = layer.ctx.createLinearGradient(0, 0, 0, layer.fontSize * 2);
+            gradient.addColorStop(0, `rgba(0, 255, 0, ${layer.opacity})`);
+            gradient.addColorStop(1, `rgba(0, 255, 0, ${layer.opacity * 0.3})`);
+            layer.ctx.fillStyle = gradient;
+            layer.ctx.font = `${layer.fontSize}px monospace`;
+            
+            for (let i = 0; i < layer.drops.length; i++) {
+                // Random character
+                const text = matrix[Math.floor(Math.random() * matrix.length)];
+                
+                // Calculate position
+                const x = i * layer.fontSize;
+                const y = layer.drops[i] * layer.fontSize;
+                
+                // Only draw if within canvas bounds
+                if (y > 0 && y < layer.canvas.height) {
+                    layer.ctx.fillText(text, x, y);
+                }
+                
+                // Reset with random delay when reaching bottom
+                if (y > layer.canvas.height) {
+                    layer.drops[i] = Math.random() * -50; // Random start position above canvas
+                }
+                
+                // Smooth movement
+                layer.drops[i] += layer.speed;
+            }
+        }
+
+        // Glowing text effect configuration
+        let glowIntensity = 0;
+        let increasing = true;
+        const maxGlow = 15;
+        const minGlow = 5;
+        const glowStep = 0.1; // Slower glow pulse
+
+        // Draw the main text with glow effect
+        function drawText() {
+            textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+            
+            const text = "Hello ABHIRANDA";
+            const fontSize = Math.min(textCanvas.width / 20, 72);
+            textCtx.font = `bold ${fontSize}px Arial`;
+            
+            // Center the text
+            const textMetrics = textCtx.measureText(text);
+            const x = (textCanvas.width - textMetrics.width) / 2;
+            const y = textCanvas.height / 2;
+            
+            // Add glow effect
+            textCtx.shadowColor = '#0F0';
+            textCtx.shadowBlur = glowIntensity;
+            textCtx.fillStyle = '#FFF';
+            
+            // Draw the text with a subtle gradient
+            const gradient = textCtx.createLinearGradient(x, y - fontSize, x, y);
+            gradient.addColorStop(0, '#FFFFFF');
+            gradient.addColorStop(1, '#CCCCCC');
+            textCtx.fillStyle = gradient;
+            
+            // Draw the text
+            textCtx.fillText(text, x, y);
+            
+            // Update glow intensity more smoothly
+            if (increasing) {
+                glowIntensity += glowStep;
+                if (glowIntensity >= maxGlow) {
+                    increasing = false;
+                }
+            } else {
+                glowIntensity -= glowStep;
+                if (glowIntensity <= minGlow) {
+                    increasing = true;
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            layers.forEach(layer => drawMatrix(layer));
+            drawText();
+            requestAnimationFrame(animate);
+        }
+
+        // Start the animation
+        animate();
+    </script>
+</body>
+</html>
